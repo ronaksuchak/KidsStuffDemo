@@ -2,7 +2,7 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools"
         xmlns:app="http://schemas.android.com/apk/res-auto">
     <data>
-        <variable name="user" type="com.etech.kidsstuffdemo.viewModels.UserViewModel"/>
+        <!--<variable name="user" type="com.etech.kidsstuffdemo.viewModels.UserViewModel"/>-->
     </data>
     <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"

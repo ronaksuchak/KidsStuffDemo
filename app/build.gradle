@@ -4,11 +4,13 @@ apply plugin: 'kotlin-android'
 
 apply plugin: 'kotlin-android-extensions'
 
+apply plugin: 'kotlin-kapt'
+
 android {
     compileSdkVersion 28
     defaultConfig {
         applicationId "com.etech.kidsstuffdemo"
-        minSdkVersion 15
+        minSdkVersion 16
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
@@ -27,6 +29,7 @@ android {
 }
 
 dependencies {
+    def room_version = "1.1.1"
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.appcompat:appcompat:1.1.0-alpha03'
@@ -40,11 +43,12 @@ dependencies {
     implementation 'com.android.volley:volley:1.1.1'
     implementation 'androidx.recyclerview:recyclerview:1.0.0'
     implementation 'com.squareup.picasso:picasso:2.71828'
-//    implementation 'com.squareup.retrofit2:retrofit:2.5.0'
-//    implementation 'com.squareup.retrofit2:converter-gson:2.5.0'
-//    implementation 'com.squareup.retrofit2:adapter-rxjava2:2.3.0'
-//    implementation 'io.reactivex.rxjava2:rxjava:2.1.6'
-//    implementation 'io.reactivex.rxjava2:rxandroid:2.0.1'
-
-
+    implementation 'com.github.prabhat1707:EasyWayLocation:1.0'
+    implementation 'com.thanosfisherman.mayi:mayi:2.1'
+    implementation 'dev.dworks.libs:volleyplus:+'
+    implementation "android.arch.persistence.room:runtime:$room_version"
+    kapt "android.arch.persistence.room:compiler:$room_version"
+    implementation 'com.google.code.gson:gson:2.8.2'
+    implementation 'io.reactivex.rxjava2:rxandroid:2.0.2'
+    implementation 'io.reactivex.rxjava2:rxjava:2.1.17'
 }
