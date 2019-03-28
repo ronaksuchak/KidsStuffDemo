@@ -16,14 +16,12 @@
                 android:ems="10"
                 android:id="@+id/editText_email_main"
                 app:layout_constraintStart_toStartOf="parent"
-                android:layout_marginLeft="8dp"
                 android:layout_marginStart="8dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 android:layout_marginEnd="8dp"
-                android:layout_marginRight="8dp"
                 android:layout_marginTop="50dp"
                 app:layout_constraintTop_toTopOf="parent"
-                android:text="ronaks.etechmavens@gmail.com"
+                android:text="1111111111"
                 android:hint="Email OR Password"/>
         <EditText
                 android:layout_width="0dp"

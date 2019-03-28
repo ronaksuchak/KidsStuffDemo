@@ -1,8 +1,13 @@
 package com.etech.kidsstuffdemo.ui
 
+
+//import HttpMultipartMode.SimpleMultipartEntity
+//import android.util.Log
+
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.ConnectivityManager
 import android.os.Bundle
@@ -11,22 +16,25 @@ import android.util.Log
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.android.volley.Request
+import com.android.volley.NetworkResponse
+import com.android.volley.RequestQueue
 import com.android.volley.Response
-import com.android.volley.error.VolleyError
-import com.android.volley.request.SimpleMultiPartRequest
+import com.android.volley.toolbox.Volley
+import com.bikomobile.multipart.Multipart
 import com.etech.kidsstuffdemo.R
 import com.etech.kidsstuffdemo.databaseHelper.AddProductDao
 import com.etech.kidsstuffdemo.databaseHelper.AddProductEntity
 import com.etech.kidsstuffdemo.databaseHelper.AppDatabase
-import com.etech.kidsstuffdemo.helpers.ApiHelper.Companion.ADD_PRODUCT
-import com.etech.kidsstuffdemo.helpers.ApiHelper.Companion.BASE_URL
+import com.etech.kidsstuffdemo.helpers.ApiHelper
+import com.etech.kidsstuffdemo.helpers.SharedPrefHelper
+import com.etech.kidsstuffdemo.models.AddProductModel
 import com.example.easywaylocation.EasyWayLocation
 import com.example.easywaylocation.Listener
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_add_product.*
+import java.io.ByteArrayOutputStream
 
 
 class AddProductActivity : AppCompatActivity() {
@@ -37,21 +45,26 @@ class AddProductActivity : AppCompatActivity() {
     private val RESULT_LOAD_IMAGE = 5
     private var db: AppDatabase? = null
     private var addProductDao: AddProductDao? = null
+    lateinit var mQurue: RequestQueue
+    var bitmap: Bitmap? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_product)
-
+        mQurue = Volley.newRequestQueue(this@AddProductActivity)
         easyWayLocation = EasyWayLocation(this@AddProductActivity)
         getLocation()
         setSpinner()
+
         imageView3.setOnClickListener {
             getImageFromGallery()
         }
 
         button_add.setOnClickListener {
+
+
             if (isNetworkAvailable()) {
-                uploadToServer()
+                uploadToServer(getEditTextData())
             } else {
                 addToDatabase(
                     AddProductEntity(
@@ -76,21 +89,99 @@ class AddProductActivity : AppCompatActivity() {
         }
     }
 
+    private fun getEditTextData(): AddProductModel {
+        var userId = SharedPrefHelper.getString(this@AddProductActivity, SharedPrefHelper.USER_ID_KEY, "")
+        var accessToken = SharedPrefHelper.getString(this@AddProductActivity, SharedPrefHelper.AUTH_TOKEN_KEY, "")
+        var productName = editText_product_name.text.toString()
+        var description = editText_description.text.toString()
+        var category = ApiHelper.CATOGURY_ID
+        var price = editText_price.text.toString()
+        var forGender = spinner_for_gender.selectedItem.toString()
+        var ageGroupId = ApiHelper.AGE_GROUP_ID
+        var bitmapLocal = bitmap
+        var lati = lat
+        var longi = long
+        var address = editText_address.text.toString()
+        var city = editText_city.text.toString()
+        var state = editText_state.text.toString()
+        var country = editText_country.text.toString()
+
+
+
+        return AddProductModel(
+            userId,
+            accessToken,
+            productName,
+            description,
+            category,
+            price,
+            forGender,
+            ageGroupId,
+            bitmapLocal!!,
+            lati.toString(),
+            longi.toString(),
+            address,
+            city,
+            state,
+            country
+        )
+    }
+
     private fun getImageFromGallery() {
         val i = Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
         startActivityForResult(i, RESULT_LOAD_IMAGE)
     }
 
-    private fun uploadToServer() {
-        var smr =
-            SimpleMultiPartRequest(Request.Method.POST, BASE_URL + ADD_PRODUCT, object : Response.Listener<String> {
-                override fun onResponse(response: String?) {
-                    Log.e(TAG, response)
-                }
+    private fun uploadToServer(addProductModel: AddProductModel) {
 
-            }, Response.ErrorListener { error -> Log.e(TAG, error?.message) })
-        smr.addStringParam("", "")
-        smr.addMultipartParam("", "", "")
+        var multipart = Multipart(this@AddProductActivity)
+
+
+        var imageName = "IMG${System.currentTimeMillis()}.jpg"
+        Log.e(TAG, imageName)
+
+
+        multipart.addParam("sellerId", addProductModel.sellerId)
+        multipart.addParam("accessToken", addProductModel.accessToken)
+        multipart.addParam("productName", addProductModel.productName)
+        multipart.addParam("description", addProductModel.description)
+        multipart.addParam("categoryId", addProductModel.categoryId)
+        multipart.addParam("price", addProductModel.price)
+
+        multipart.addParam("forGender", addProductModel.forGender)
+        multipart.addParam("ageGroupId", addProductModel.ageGroupId)
+        //multipart.addParam("file",addProductModel.productName)
+
+        multipart.addFile("image/jpeg", "file", imageName, bitmapToByteArray(bitmap!!))
+        multipart.addParam("latitude", addProductModel.latitude)
+        multipart.addParam("longitude", addProductModel.longitude)
+
+        multipart.addParam("address", addProductModel.address)
+        multipart.addParam("city", addProductModel.city)
+        multipart.addParam("state", addProductModel.state)
+        multipart.addParam("country", addProductModel.country)
+
+
+        multipart.launchRequest(ApiHelper.BASE_URL + ApiHelper.ADD_PRODUCT, {
+
+        Log.e(TAG,it.data.toString())
+
+
+        }, {
+            Log.e(TAG,it.toString())
+
+        })
+
+
+
+    }
+
+    fun bitmapToByteArray(bitmap: Bitmap): ByteArray {
+
+        var stream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
+        var byteArray = stream.toByteArray()
+        return byteArray
     }
 
 
@@ -98,20 +189,7 @@ class AddProductActivity : AppCompatActivity() {
 
         Observable.fromCallable {
             db = AppDatabase.getAppDataBase(context = this)
-            // genderDao = db?.genderDao()
 
-            //            var gender1 = Gender(name = "Male")
-            //            var gender2 = Gender(name = "Female")
-            //
-            //            with(genderDao){
-            //                this?.insertGender(gender1)
-            //                this?.insertGender(gender2)
-            //            }
-            //            db?.genderDao()?.getGenders()
-            //        }).doOnNext({ list ->
-            //            var finalString = ""
-            //            list?.map { finalString+= it.name+" - " }
-            //            tv_message.text = finalString
             addProductDao = db?.AddProductDao()
             with(addProductDao) {
                 this?.insertGender(addProductEntity)
@@ -120,6 +198,7 @@ class AddProductActivity : AppCompatActivity() {
         }.subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe()
+        Log.e(TAG, "added !! to DB")
 
 
     }
@@ -187,8 +266,10 @@ class AddProductActivity : AppCompatActivity() {
             val columnIndex = cursor.getColumnIndex(filePathColumn[0])
             val picturePath = cursor.getString(columnIndex)
             cursor.close()
-            var bitmap = BitmapFactory.decodeFile(picturePath)
+            bitmap = BitmapFactory.decodeFile(picturePath)
             imageView3.setImageBitmap(bitmap)
         }
     }
 }
+
+

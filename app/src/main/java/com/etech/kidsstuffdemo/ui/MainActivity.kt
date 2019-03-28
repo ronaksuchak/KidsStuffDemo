@@ -34,7 +34,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
+        SharedPrefHelper.add(this@MainActivity, SharedPrefHelper.LOGIN_PREF_KEY, 0)
         MayI.withActivity(this)
             .withPermissions(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION,Manifest.permission.READ_EXTERNAL_STORAGE,Manifest.permission.WRITE_EXTERNAL_STORAGE)
             .onRationale(this::permissionRationaleMulti)
@@ -88,9 +88,9 @@ class MainActivity : AppCompatActivity() {
         var userRequest =
             JsonObjectRequest(Request.Method.POST, BASE_URL + LOGIN, requestObject, Response.Listener<JSONObject> {
 
-                Log.e(TAG, it.toString())
-                var data = it.getJSONObject("data")
-                var userDetail = data.getJSONObject("userDetail")
+                Log.e(TAG, "Login responce ${it}")
+                val data = it.getJSONObject("data")
+                val userDetail = data.getJSONObject("userDetail")
 
                 SharedPrefHelper.add(this@MainActivity, SharedPrefHelper.LOGIN_PREF_KEY, it.getInt("flag"))
                 SharedPrefHelper.add(this@MainActivity, SharedPrefHelper.USER_ID_KEY, userDetail.getString("_id"))
@@ -105,7 +105,7 @@ class MainActivity : AppCompatActivity() {
                 SharedPrefHelper.add(this@MainActivity, SharedPrefHelper.USER_NAME_KEY, userDetail.getString("name"))
 
             }, Response.ErrorListener {
-                Log.e(TAG, it.message)
+                Log.e(TAG, it.toString())
 
             })
         mQueue.add(userRequest)
