@@ -34,12 +34,20 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        SharedPrefHelper.add(this@MainActivity, SharedPrefHelper.LOGIN_PREF_KEY, 0)
+
+        //SharedPrefHelper.add(this@MainActivity, SharedPrefHelper.LOGIN_PREF_KEY, 0)
         MayI.withActivity(this)
             .withPermissions(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION,Manifest.permission.READ_EXTERNAL_STORAGE,Manifest.permission.WRITE_EXTERNAL_STORAGE)
             .onRationale(this::permissionRationaleMulti)
             .onResult(this::permissionResultMulti)
             .check()
+
+        //val flagew = SharedPrefHelper.getInt(this@MainActivity, SharedPrefHelper.LOGIN_PREF_KEY, 0)
+        var flage = SharedPrefHelper.getInt(this@MainActivity, SharedPrefHelper.LOGIN_PREF_KEY, 0)
+        if (flage == 1) {
+            startActivity(Intent(this@MainActivity, DashbordActivity::class.java))
+            Toast.makeText(this@MainActivity, "success!", Toast.LENGTH_LONG).show()
+        }
 
 
 
@@ -70,11 +78,11 @@ class MainActivity : AppCompatActivity() {
 
     }
     private fun permissionResultMulti(permissions: Array<PermissionBean>) {
-        Toast.makeText(this@MainActivity,"MULTI PERMISSION RESULT " + Arrays.deepToString(permissions),Toast.LENGTH_LONG).show()
+        //Toast.makeText(this@MainActivity,"MULTI PERMISSION RESULT " + Arrays.deepToString(permissions),Toast.LENGTH_LONG).show()
     }
 
     private fun permissionRationaleMulti(permissions: Array<PermissionBean>, token: PermissionToken) {
-        Toast.makeText(this@MainActivity,"Rationales for Multiple Permissions " + Arrays.deepToString(permissions),Toast.LENGTH_LONG).show()
+        //Toast.makeText(this@MainActivity,"Rationales for Multiple Permissions " + Arrays.deepToString(permissions),Toast.LENGTH_LONG).show()
         token.continuePermissionRequest()
     }
 

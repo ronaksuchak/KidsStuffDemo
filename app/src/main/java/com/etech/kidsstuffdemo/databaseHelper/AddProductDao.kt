@@ -17,4 +17,7 @@ interface AddProductDao {
     @Query("SELECT * FROM AddProductEntity")
     fun getAllPendingUploads():List<AddProductEntity>
 
+    @Query("DELETE FROM AddProductEntity")
+    fun deleteAll()
+
 }

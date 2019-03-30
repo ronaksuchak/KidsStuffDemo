@@ -1,12 +1,9 @@
 package com.etech.kidsstuffdemo.ui
 
-
-//import HttpMultipartMode.SimpleMultipartEntity
-//import android.util.Log
-
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.ConnectivityManager
@@ -16,11 +13,10 @@ import android.util.Log
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.android.volley.NetworkResponse
 import com.android.volley.RequestQueue
-import com.android.volley.Response
 import com.android.volley.toolbox.Volley
 import com.bikomobile.multipart.Multipart
+import com.etech.kidsstuffdemo.brodcastRecivers.ConnectionBrodcastReciver
 import com.etech.kidsstuffdemo.R
 import com.etech.kidsstuffdemo.databaseHelper.AddProductDao
 import com.etech.kidsstuffdemo.databaseHelper.AddProductEntity
@@ -35,9 +31,11 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_add_product.*
 import java.io.ByteArrayOutputStream
+import java.nio.charset.Charset
 
 
 class AddProductActivity : AppCompatActivity() {
+
     private lateinit var easyWayLocation: EasyWayLocation
     private val TAG = "ADD_PRODUCT"
     var lat: Double = 0.0
@@ -51,6 +49,8 @@ class AddProductActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_product)
+        registorReciver()
+
         mQurue = Volley.newRequestQueue(this@AddProductActivity)
         easyWayLocation = EasyWayLocation(this@AddProductActivity)
         getLocation()
@@ -66,70 +66,39 @@ class AddProductActivity : AppCompatActivity() {
             if (isNetworkAvailable()) {
                 uploadToServer(getEditTextData())
             } else {
-                addToDatabase(
+                var addProductModel = getEditTextData()
+
+                var newAddProductEntity = arrayListOf<AddProductEntity>()
+                newAddProductEntity.add(
                     AddProductEntity(
-                        1,
-                        "id1",
-                        "abc2",
-                        "beg",
-                        "sjalhksje",
-                        "3",
-                        "66",
-                        "him",
-                        "sdfg",
-                        "asdf",
-                        "sdf",
-                        "asdf",
-                        "dsg",
-                        "sdf",
-                        "sd"
+                        System.currentTimeMillis().toInt(),
+                        addProductModel.sellerId,
+                        addProductModel.accessToken,
+                        addProductModel.productName,
+                        addProductModel.description,
+                        addProductModel.categoryId,
+                        addProductModel.price,
+                        addProductModel.forGender,
+                        addProductModel.ageGroupId,
+                        bitmapToByteArray(addProductModel.file),
+                        addProductModel.latitude,
+                        addProductModel.longitude,
+                        addProductModel.address,
+                        addProductModel.city,
+                        addProductModel.state,
+                        addProductModel.country
                     )
                 )
+                addToDatabase(newAddProductEntity)
             }
         }
+
+
     }
 
-    private fun getEditTextData(): AddProductModel {
-        var userId = SharedPrefHelper.getString(this@AddProductActivity, SharedPrefHelper.USER_ID_KEY, "")
-        var accessToken = SharedPrefHelper.getString(this@AddProductActivity, SharedPrefHelper.AUTH_TOKEN_KEY, "")
-        var productName = editText_product_name.text.toString()
-        var description = editText_description.text.toString()
-        var category = ApiHelper.CATOGURY_ID
-        var price = editText_price.text.toString()
-        var forGender = spinner_for_gender.selectedItem.toString()
-        var ageGroupId = ApiHelper.AGE_GROUP_ID
-        var bitmapLocal = bitmap
-        var lati = lat
-        var longi = long
-        var address = editText_address.text.toString()
-        var city = editText_city.text.toString()
-        var state = editText_state.text.toString()
-        var country = editText_country.text.toString()
 
-
-
-        return AddProductModel(
-            userId,
-            accessToken,
-            productName,
-            description,
-            category,
-            price,
-            forGender,
-            ageGroupId,
-            bitmapLocal!!,
-            lati.toString(),
-            longi.toString(),
-            address,
-            city,
-            state,
-            country
-        )
-    }
-
-    private fun getImageFromGallery() {
-        val i = Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        startActivityForResult(i, RESULT_LOAD_IMAGE)
+    fun byteArrayToString(byteArray: ByteArray): String {
+        return byteArray.toString(Charset.defaultCharset())
     }
 
     private fun uploadToServer(addProductModel: AddProductModel) {
@@ -164,17 +133,46 @@ class AddProductActivity : AppCompatActivity() {
 
         multipart.launchRequest(ApiHelper.BASE_URL + ApiHelper.ADD_PRODUCT, {
 
-        Log.e(TAG,it.data.toString())
+            Log.e(TAG, it.data.toString())
 
 
         }, {
-            Log.e(TAG,it.toString())
+            Log.e(TAG, it.toString())
 
         })
 
 
-
     }
+
+
+    private fun addToDatabase(addProductEntityArray: List<AddProductEntity>) {
+
+
+        Toast.makeText(this@AddProductActivity, "Product will added when you will back online!! ", Toast.LENGTH_SHORT)
+            .show()
+
+        registerReceiver(
+            ConnectionBrodcastReciver(),
+            IntentFilter("android.net.wifi.WIFI_STATE_CHANGED")
+        )
+
+
+        for (i in addProductEntityArray) {
+
+            Observable.fromCallable {
+                db = AppDatabase.getAppDataBase(context = this)
+
+                addProductDao = db?.addProductDao()
+                with(addProductDao) {
+                    this?.insertGender(i)
+                }
+            }.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe()
+            Log.e(TAG, "added !! to DB")
+        }
+    }
+
 
     fun bitmapToByteArray(bitmap: Bitmap): ByteArray {
 
@@ -184,23 +182,48 @@ class AddProductActivity : AppCompatActivity() {
         return byteArray
     }
 
+    private fun getEditTextData(): AddProductModel {
+        val userId = SharedPrefHelper.getString(this@AddProductActivity, SharedPrefHelper.USER_ID_KEY, "")
+        val accessToken = SharedPrefHelper.getString(this@AddProductActivity, SharedPrefHelper.AUTH_TOKEN_KEY, "")
+        val productName = editText_product_name.text.toString()
+        val description = editText_description.text.toString()
+        val category = ApiHelper.CATOGURY_ID
+        val price = editText_price.text.toString()
+        val forGender = spinner_for_gender.selectedItem.toString()
+        val ageGroupId = ApiHelper.AGE_GROUP_ID
+        val bitmapLocal = bitmap
+        val lati = lat
+        val longi = long
+        val address = editText_address.text.toString()
+        val city = editText_city.text.toString()
+        val state = editText_state.text.toString()
+        val country = editText_country.text.toString()
 
-    private fun addToDatabase(addProductEntity: AddProductEntity) {
-
-        Observable.fromCallable {
-            db = AppDatabase.getAppDataBase(context = this)
-
-            addProductDao = db?.AddProductDao()
-            with(addProductDao) {
-                this?.insertGender(addProductEntity)
-            }
-
-        }.subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe()
-        Log.e(TAG, "added !! to DB")
 
 
+        return AddProductModel(
+            userId,
+            accessToken,
+            productName,
+            description,
+            category,
+            price,
+            forGender,
+            ageGroupId,
+            bitmapLocal!!,
+            lati.toString(),
+            longi.toString(),
+            address,
+            city,
+            state,
+            country
+        )
+    }
+
+
+    private fun getImageFromGallery() {
+        val i = Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        startActivityForResult(i, RESULT_LOAD_IMAGE)
     }
 
     private fun setSpinner() {
@@ -243,6 +266,7 @@ class AddProductActivity : AppCompatActivity() {
         })
     }
 
+
     private fun isNetworkAvailable(): Boolean {
         val manager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val networkInfo = manager.activeNetworkInfo
@@ -253,6 +277,15 @@ class AddProductActivity : AppCompatActivity() {
         }
         return isAvailable
     }
+
+    fun registorReciver() {
+        var intentFilter = IntentFilter()
+        intentFilter.addAction("android.net.wifi.WIFI_STATE_CHANGED")
+        var reviver = ConnectionBrodcastReciver()
+        registerReceiver(reviver, intentFilter)
+    }
+
+
 
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -270,6 +303,7 @@ class AddProductActivity : AppCompatActivity() {
             imageView3.setImageBitmap(bitmap)
         }
     }
-}
 
+
+}
 

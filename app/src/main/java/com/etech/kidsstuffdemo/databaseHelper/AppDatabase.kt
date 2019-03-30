@@ -5,10 +5,12 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [AddProductEntity::class],version = 1,exportSchema = false)
+@Database(entities = [AddProductEntity::class,ProductEntity::class,DeleteProductEntity::class],version = 1,exportSchema = false)
 abstract class AppDatabase: RoomDatabase() {
 
-    abstract fun AddProductDao():AddProductDao
+    abstract fun addProductDao():AddProductDao
+    abstract fun productDao():ProductDao
+//    abstract fun deleteProductDao():DeleteProductDao
 
     companion object {
         var INSTANCE: AppDatabase? = null

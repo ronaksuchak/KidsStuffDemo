@@ -1,5 +1,7 @@
 package com.etech.kidsstuffdemo.databaseHelper
 
+import android.graphics.Bitmap
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -15,6 +17,10 @@ data class AddProductEntity(
     val price: String,
     val forGender: String,
     val ageGroupId: String,
+
+    @ColumnInfo(typeAffinity = ColumnInfo.BLOB)
+    val bitmap: ByteArray,
+
     val latitude: String,
     val longitude: String,
     val address: String,

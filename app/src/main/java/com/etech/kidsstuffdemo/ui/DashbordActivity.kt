@@ -17,11 +17,17 @@ import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
 import com.etech.kidsstuffdemo.R
 import com.etech.kidsstuffdemo.adaptors.ProductListAdaptor
+import com.etech.kidsstuffdemo.databaseHelper.AppDatabase
+import com.etech.kidsstuffdemo.databaseHelper.ProductDao
+import com.etech.kidsstuffdemo.databaseHelper.ProductEntity
 import com.etech.kidsstuffdemo.helpers.ApiHelper
 import com.etech.kidsstuffdemo.helpers.InfiniteScroll
 import com.etech.kidsstuffdemo.helpers.SharedPrefHelper
 import com.etech.kidsstuffdemo.models.ProductListModel
 import com.google.android.material.navigation.NavigationView
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_dashbord.*
 import kotlinx.android.synthetic.main.app_bar_dashbord.*
 import kotlinx.android.synthetic.main.content_dashbord.*
@@ -30,12 +36,15 @@ import org.json.JSONObject
 class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     var productList = mutableListOf<ProductListModel>()
+    var productListDb = mutableListOf<ProductEntity>()
     private lateinit var mQueue: RequestQueue
     private val TAG = "Kids Stuff"
     var authToken = ""
     var userId = ""
-    var adaptor = ProductListAdaptor(this,productList)
-    var layoutManager= LinearLayoutManager(this)
+    var adaptor = ProductListAdaptor(this, productList)
+    var layoutManager = LinearLayoutManager(this)
+    private var db: AppDatabase? = null
+    private var productDao: ProductDao? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -43,10 +52,11 @@ class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
 
         setContentView(R.layout.activity_dashbord)
         getAccessToken()
+
         loadJson(1)
 
         setSupportActionBar(toolbar)
-        supportActionBar?.title="Product List"
+        supportActionBar?.title = "Product List"
 
 
         recyclerView.layoutManager = layoutManager
@@ -55,8 +65,9 @@ class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
         recyclerView.addOnScrollListener(InfiniteScroll(layoutManager) {
 
             //println("load page $it")
-            Toast.makeText(this,"current page is $it",Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "current page is ${it - 1}", Toast.LENGTH_SHORT).show()
             loadJson(it)
+            productList.clear()
             adaptor.notifyDataSetChanged()
 
         })
@@ -67,18 +78,18 @@ class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
             loadJson(1)
             adaptor.notifyDataSetChanged()
 
-            recyclerView.addOnScrollListener(InfiniteScroll(layoutManager) {
-
-                println("load page $it")
-                //productList.clear()
-                Toast.makeText(this,"current page is $it",Toast.LENGTH_SHORT).show()
-                loadJson(it)
-
-            })
+//           recyclerView.addOnScrollListener(InfiniteScroll(layoutManager) {
+//
+//                println("load page ${it-1}")
+//                //productList.clear()
+//                Toast.makeText(this,"current page is ${it-1}",Toast.LENGTH_SHORT).show()
+//                loadJson(it-1)
+//
+//            })
 
             adaptor.notifyDataSetChanged()
 
-            Toast.makeText(this,"current page is 1",Toast.LENGTH_SHORT).show()
+            //Toast.makeText(this,"current page is 1",Toast.LENGTH_SHORT).show()
         }
 
         fab.setOnClickListener { view ->
@@ -101,9 +112,31 @@ class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
         authToken = SharedPrefHelper.getString(this, SharedPrefHelper.AUTH_TOKEN_KEY, "")
     }
 
+    override fun onResume() {
+        super.onResume()
+        productList.clear()
+        loadJson(1)
+        adaptor.notifyDataSetChanged()
+        swipe_n_refresh.isRefreshing = false
+
+    }
+
+    fun addToDb(productListDb: MutableList<ProductEntity>) {
+        Observable.fromCallable {
+            db = AppDatabase.getAppDataBase(context = this)
+
+            productDao = db?.productDao()
+            with(productDao) {
+                this?.addProduct(productListDb)
+            }
+        }.subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe()
+
+    }
 
 
-    private fun loadJson(pageNumber:Int) {
+    private fun loadJson(pageNumber: Int) {
 
         var requestObject = JSONObject()
 
@@ -131,10 +164,28 @@ class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
                             product.getString("image"),
                             product.getInt("totalViews")
                         )
+
                     )
+                    productListDb.add(
+                        ProductEntity(
+                            id = System.currentTimeMillis().toInt(),
+                            _id = product.getString("_id"),
+                            productName = product.getString("productName"),
+                            price = product.getString("price"),
+                            imageUrl = product.getString("image"),
+                            totalViews = product.getInt("totalViews")
+                        )
+                    )
+
+                    addToDb(productListDb)
+
                     Log.e(TAG, "list size ${productList.size}")
+                    Log.e(TAG, "list size ${productListDb.size}")
+                    if (productList.size == 0) {
+                        swipe_n_refresh.isRefreshing = false
+                    }
                     adaptor.notifyDataSetChanged()
-                    if(swipe_n_refresh.isRefreshing){
+                    if (swipe_n_refresh.isRefreshing) {
                         swipe_n_refresh.isRefreshing = false
                     }
                 }
@@ -163,7 +214,10 @@ class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.action_settings -> return true
+            R.id.action_settings -> {
+                startActivity(Intent(this@DashbordActivity, DeleteProduct::class.java))
+                return true
+            }
             else -> return super.onOptionsItemSelected(item)
         }
     }
@@ -192,4 +246,6 @@ class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
         drawer_layout.closeDrawer(GravityCompat.START)
         return true
     }
+
+
 }
