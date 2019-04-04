@@ -8,9 +8,14 @@ import androidx.room.Query
 @Dao
 interface DeleteProductDao {
     @Insert
-    fun addproduct(deleteProductDao: DeleteProductDao)
-    @Delete
-    fun removeProduct(deleteProductDao: DeleteProductDao)
+    fun addproduct(deleteProductEntity: DeleteProductEntity)
+
+//    @Delete
+//    fun removeProduct(deleteProductDao: DeleteProductDao)
+
     @Query("DELETE FROM DeleteProductEntity")
     fun deleteAll()
+
+    @Query("SELECT * FROM DeleteProductEntity")
+    fun getAll():List<DeleteProductEntity>
 }

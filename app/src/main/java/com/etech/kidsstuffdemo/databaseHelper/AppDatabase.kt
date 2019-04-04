@@ -10,7 +10,7 @@ abstract class AppDatabase: RoomDatabase() {
 
     abstract fun addProductDao():AddProductDao
     abstract fun productDao():ProductDao
-//    abstract fun deleteProductDao():DeleteProductDao
+    abstract fun deleteProductDao():DeleteProductDao
 
     companion object {
         var INSTANCE: AppDatabase? = null
@@ -29,3 +29,7 @@ abstract class AppDatabase: RoomDatabase() {
         }
     }
 }
+
+//error: Type of the parameter must be a class annotated with @Entity or a collection/array of it.
+//    com.etech.kidsstuffdemo.databaseHelper.DeleteProductDao deleteProductDao);
+//                                                            ^

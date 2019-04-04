@@ -15,7 +15,6 @@ import com.android.volley.RequestQueue
 import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
-import com.etech.kidsstuffdemo.R
 import com.etech.kidsstuffdemo.adaptors.ProductListAdaptor
 import com.etech.kidsstuffdemo.databaseHelper.AppDatabase
 import com.etech.kidsstuffdemo.databaseHelper.ProductDao
@@ -32,6 +31,17 @@ import kotlinx.android.synthetic.main.activity_dashbord.*
 import kotlinx.android.synthetic.main.app_bar_dashbord.*
 import kotlinx.android.synthetic.main.content_dashbord.*
 import org.json.JSONObject
+import android.graphics.BitmapFactory
+import android.graphics.Bitmap
+import android.os.AsyncTask
+import android.os.Handler
+import android.os.StrictMode
+import com.etech.kidsstuffdemo.R
+import org.jetbrains.anko.doAsync
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.net.HttpURLConnection
+
 
 class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
@@ -78,18 +88,9 @@ class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
             loadJson(1)
             adaptor.notifyDataSetChanged()
 
-//           recyclerView.addOnScrollListener(InfiniteScroll(layoutManager) {
-//
-//                println("load page ${it-1}")
-//                //productList.clear()
-//                Toast.makeText(this,"current page is ${it-1}",Toast.LENGTH_SHORT).show()
-//                loadJson(it-1)
-//
-//            })
 
             adaptor.notifyDataSetChanged()
 
-            //Toast.makeText(this,"current page is 1",Toast.LENGTH_SHORT).show()
         }
 
         fab.setOnClickListener { view ->
@@ -133,6 +134,7 @@ class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe()
 
+
     }
 
 
@@ -174,13 +176,12 @@ class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
                             price = product.getString("price"),
                             imageUrl = product.getString("image"),
                             totalViews = product.getInt("totalViews")
+//                            image = getBitmapFromURL(product.getString("image"))!!
                         )
                     )
 
-                    addToDb(productListDb)
-
                     Log.e(TAG, "list size ${productList.size}")
-                    Log.e(TAG, "list size ${productListDb.size}")
+                   // Log.e(TAG, "list size ${productListDb.size}")
                     if (productList.size == 0) {
                         swipe_n_refresh.isRefreshing = false
                     }
@@ -189,6 +190,7 @@ class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
                         swipe_n_refresh.isRefreshing = false
                     }
                 }
+                addToDb(productListDb)
             },
 
             Response.ErrorListener {
@@ -198,6 +200,48 @@ class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
 
 
     }
+
+    fun getBitmapFromURL(url: String): ByteArray? {
+         var byteArray: ByteArray?=null
+        try {
+
+            doAsync {
+                val url = java.net.URL(url)
+                val connection = url
+                    .openConnection() as HttpURLConnection
+                connection.doInput = true
+                connection.connect()
+                val input = connection.inputStream
+                var bmp = BitmapFactory.decodeStream(input)
+
+                val stream = ByteArrayOutputStream()
+                bmp.compress(Bitmap.CompressFormat.JPEG, 100, stream)
+                byteArray = stream.toByteArray()
+                Log.e(TAG, "image array $byteArray")
+                // bmp.recycle()
+            }
+            return byteArray
+
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+        return null
+    }
+    /* val url = java.net.URL(url)
+        val connection = url
+            .openConnection() as HttpURLConnection
+        connection.setDoInput(true)
+        connection.connect()
+        val input = connection.getInputStream()
+        var bmp =  BitmapFactory.decodeStream(input)
+
+        val stream = ByteArrayOutputStream()
+        bmp.compress(Bitmap.CompressFormat.JPEG, 100, stream)
+        val byteArray = stream.toByteArray()
+       // bmp.recycle()
+        return byteArray
+*/
+
 
     override fun onBackPressed() {
         if (drawer_layout.isDrawerOpen(GravityCompat.START)) {
@@ -215,7 +259,7 @@ class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.action_settings -> {
-                startActivity(Intent(this@DashbordActivity, DeleteProduct::class.java))
+                startActivity(Intent(this@DashbordActivity, DeleteProductActivity::class.java))
                 return true
             }
             else -> return super.onOptionsItemSelected(item)
@@ -247,5 +291,40 @@ class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
         return true
     }
 
+//    class DownLoadImageTask : AsyncTask<String, String, ByteArray>() {
+//        override fun doInBackground(vararg params: String?): ByteArray {
+//            var byteArray: ByteArray
+//            try {
+//                //Thread(Runnable {
+//                val url = java.net.URL(params[0])
+//                val connection = url
+//                    .openConnection() as HttpURLConnection
+//                connection.doInput = true
+//                connection.connect()
+//                val input = connection.inputStream
+//                var bmp = BitmapFactory.decodeStream(input)
+//
+//                val stream = ByteArrayOutputStream()
+//                bmp.compress(Bitmap.CompressFormat.JPEG, 100, stream)
+//                byteArray = stream.toByteArray()
+//                Log.e("kids task", "image array $byteArray")
+//                return byteArray
+//                // bmp.recycle()
+////                return if (byteArray != null) {
+////                    byteArray
+////                } else {
+////                    Log.e(TAG, "bytearray is null")
+////                    null
+////                }
+//
+//
+//            } catch (e: IOException) {
+//                e.printStackTrace()
+//                return null!!
+//            }
+//
+//        }
+
 
 }
+

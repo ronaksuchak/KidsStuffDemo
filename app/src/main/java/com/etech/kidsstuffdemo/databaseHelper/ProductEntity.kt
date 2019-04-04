@@ -20,6 +20,9 @@ data class ProductEntity (
 
     var totalViews:Int
 
+//    @ColumnInfo(typeAffinity = ColumnInfo.BLOB)
+//    var image:ByteArray
+
 
 )
 

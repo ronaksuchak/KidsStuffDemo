@@ -15,4 +15,10 @@ import androidx.room.*
     @Query("DELETE FROM ProductEntity")
     fun deleteAllProduct()
 
+   @Query("SELECT * FROM ProductEntity")
+   fun getAllProducts():List<ProductEntity>
+
+    @Query("DELETE FROM ProductEntity WHERE _id=_id")
+    fun deleteById(_id:String)
+
 }

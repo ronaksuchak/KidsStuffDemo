@@ -10,3 +10,7 @@ data class DeleteProductEntity (
     var id:String
 
 )
+
+//error: Type of the parameter must be a class annotated with @Entity or a collection/array of it.
+//    com.etech.kidsstuffdemo.databaseHelper.DeleteProductDao deleteProductDao);
+//                                                            ^

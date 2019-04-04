@@ -15,8 +15,6 @@ import com.etech.kidsstuffdemo.R
 import com.etech.kidsstuffdemo.helpers.ApiHelper
 import com.etech.kidsstuffdemo.helpers.SharedPrefHelper
 import com.etech.kidsstuffdemo.models.ProductListModel
-import com.etech.kidsstuffdemo.ui.DeleteProduct
-import com.google.gson.JsonObject
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.delete_product_list_item.view.*
 import org.json.JSONObject
@@ -52,6 +50,10 @@ class DeleteProductListAdaptor(private val context: Context, private val product
             notifyDataSetChanged()
 
         }
+
+    }
+
+    private fun deleteProductFromDb(id:String){
 
     }
 

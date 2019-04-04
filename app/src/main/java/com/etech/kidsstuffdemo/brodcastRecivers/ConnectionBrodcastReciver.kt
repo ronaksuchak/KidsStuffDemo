@@ -7,20 +7,24 @@ import android.net.ConnectivityManager
 import android.os.Handler
 import android.util.Log
 import android.widget.Toast
+import com.android.volley.Request
+import com.android.volley.Response
+import com.android.volley.toolbox.JsonObjectRequest
+import com.android.volley.toolbox.Volley
 import com.bikomobile.multipart.Multipart
-import com.etech.kidsstuffdemo.databaseHelper.AddProductDao
-import com.etech.kidsstuffdemo.databaseHelper.AddProductEntity
-import com.etech.kidsstuffdemo.databaseHelper.AppDatabase
+import com.etech.kidsstuffdemo.databaseHelper.*
 import com.etech.kidsstuffdemo.helpers.ApiHelper
+import com.etech.kidsstuffdemo.helpers.SharedPrefHelper
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import org.json.JSONObject
 import java.nio.charset.Charset
 
 class ConnectionBrodcastReciver : BroadcastReceiver() {
     private var db: AppDatabase? = null
     private var addProductDao: AddProductDao? = null
-
+    private var deleteProductDao:DeleteProductDao? = null
 
     override fun onReceive(context: Context, intent: Intent) {
 
@@ -32,6 +36,7 @@ class ConnectionBrodcastReciver : BroadcastReceiver() {
                     Log.e(TAG, "Network is back On line ")
 
                      getAllPendingUpload(context)
+                    getAllPendingDels(context)
                     //Log.e(TAG,"size of list to upload ${list.size}")
 
 
@@ -41,6 +46,50 @@ class ConnectionBrodcastReciver : BroadcastReceiver() {
                 }
             },5000)
 
+
+    }
+
+    private fun getAllPendingDels(context: Context) {
+        var listOfAllPendingDelets = listOf<DeleteProductEntity>()
+        Observable.fromCallable {
+            db = AppDatabase.getAppDataBase(context = context)
+
+            deleteProductDao = db?.deleteProductDao()
+            with(deleteProductDao) {
+                listOfAllPendingDelets = this?.getAll()!!
+                Log.e(TAG, " size of list from db ${listOfAllPendingDelets.size.toString()}")
+                for (i in listOfAllPendingDelets) {
+                    deleteProduct(context,i.id)
+                }
+            }
+        }.subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe()
+
+    }
+
+    private fun deleteProduct(context: Context,productId: String) {
+        var mQueue = Volley.newRequestQueue(context)
+        var userId = SharedPrefHelper.getString(context, SharedPrefHelper.USER_ID_KEY, "")
+        var authToken = SharedPrefHelper.getString(context, SharedPrefHelper.AUTH_TOKEN_KEY, "")
+        mQueue = Volley.newRequestQueue(context)
+        var requestParam: JSONObject = JSONObject()
+        requestParam.put("userId",userId)
+        requestParam.put("accessToken",authToken)
+        requestParam.put("productId",productId)
+
+
+
+        var request=
+            JsonObjectRequest(Request.Method.POST,ApiHelper.BASE_URL+ApiHelper.DELETE_PRODUCTS,requestParam, Response.Listener {
+                Toast.makeText(context,it.getString("message"),Toast.LENGTH_SHORT).show()
+
+
+            }, Response.ErrorListener {
+
+            })
+        mQueue.add(request)
+        deleteAllDelFromDb(context)
 
     }
 
@@ -81,6 +130,10 @@ class ConnectionBrodcastReciver : BroadcastReceiver() {
 
     }
 
+
+
+
+
     private fun deleteAllFromDb(context: Context){
         Observable.fromCallable {
             db = AppDatabase.getAppDataBase(context = context)
@@ -93,6 +146,21 @@ class ConnectionBrodcastReciver : BroadcastReceiver() {
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe()
     }
+    private fun deleteAllDelFromDb(context: Context){
+        Observable.fromCallable {
+            db = AppDatabase.getAppDataBase(context = context)
+
+            deleteProductDao = db?.deleteProductDao()
+            with(deleteProductDao) {
+                this?.deleteAll()
+            }
+        }.subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe()
+    }
+
+
+
 
 
 
