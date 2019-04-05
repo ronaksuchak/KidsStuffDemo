@@ -1,6 +1,7 @@
 package com.etech.kidsstuffdemo.databaseHelper
 
 import androidx.room.*
+import org.jetbrains.annotations.NotNull
 
 
 @Dao
@@ -9,8 +10,8 @@ import androidx.room.*
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun addProduct(product: MutableList<ProductEntity>)
 
-    @Delete
-    fun removeProduct(product: ProductEntity)
+    @Query("DELETE FROM ProductEntity where ProductId = :id")
+    fun removeProduct(id:String)
 
     @Query("DELETE FROM ProductEntity")
     fun deleteAllProduct()
@@ -18,7 +19,7 @@ import androidx.room.*
    @Query("SELECT * FROM ProductEntity")
    fun getAllProducts():List<ProductEntity>
 
-    @Query("DELETE FROM ProductEntity WHERE _id=_id")
-    fun deleteById(_id:String)
+//    @Query("DELETE FROM ProductEntity WHERE ProductId=id")
+//    fun deleteById(@NotNull id:String)
 
 }

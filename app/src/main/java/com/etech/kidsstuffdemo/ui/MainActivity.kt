@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity() {
         //val flagew = SharedPrefHelper.getInt(this@MainActivity, SharedPrefHelper.LOGIN_PREF_KEY, 0)
         var flage = SharedPrefHelper.getInt(this@MainActivity, SharedPrefHelper.LOGIN_PREF_KEY, 0)
         if (flage == 1) {
-            startActivity(Intent(this@MainActivity, DashbordActivity::class.java))
+            startActivity(Intent(this@MainActivity, DeleteProductActivity::class.java))
             Toast.makeText(this@MainActivity, "success!", Toast.LENGTH_LONG).show()
         }
 
@@ -66,7 +66,7 @@ class MainActivity : AppCompatActivity() {
             Handler().postDelayed({
                 var flage = SharedPrefHelper.getInt(this@MainActivity, SharedPrefHelper.LOGIN_PREF_KEY, 0)
                 if (flage == 1) {
-                    startActivity(Intent(this@MainActivity, DashbordActivity::class.java))
+                    startActivity(Intent(this@MainActivity, DeleteProductActivity::class.java))
                     Toast.makeText(this@MainActivity, "success!", Toast.LENGTH_LONG).show()
                 } else {
                     Toast.makeText(this@MainActivity, "Failed!", Toast.LENGTH_LONG).show()

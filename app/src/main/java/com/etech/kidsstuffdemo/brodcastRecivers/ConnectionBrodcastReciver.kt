@@ -24,27 +24,27 @@ import java.nio.charset.Charset
 class ConnectionBrodcastReciver : BroadcastReceiver() {
     private var db: AppDatabase? = null
     private var addProductDao: AddProductDao? = null
-    private var deleteProductDao:DeleteProductDao? = null
+    private var deleteProductDao: DeleteProductDao? = null
 
     override fun onReceive(context: Context, intent: Intent) {
 
-            Handler().postDelayed(Runnable {
-                Log.e(TAG, "Waitting....")
-                if (isNetworkAvailable(context)) {
-            Log.e(TAG, "onReceive....")
+        Handler().postDelayed({
+            Log.e(TAG, "Waitting....")
+            if (isNetworkAvailable(context)) {
+                Log.e(TAG, "onReceive....")
 //            UploadTask(context, getAllPendingUpload(context)).execute()
-                    Log.e(TAG, "Network is back On line ")
+                Log.e(TAG, "Network is back On line ")
 
-                     getAllPendingUpload(context)
-                    getAllPendingDels(context)
-                    //Log.e(TAG,"size of list to upload ${list.size}")
+                getAllPendingUpload(context)
+                getAllPendingDels(context)
+                //Log.e(TAG,"size of list to upload ${list.size}")
 
 
-                } else {
-
-                    Toast.makeText(context, "network is not avalable ..", Toast.LENGTH_SHORT).show()
-                }
-            },5000)
+            } else {
+                Log.e(TAG, "Network is offline line ")
+                Toast.makeText(context, "network is not avalable ..", Toast.LENGTH_SHORT).show()
+            }
+        }, 5000)
 
 
     }
@@ -57,9 +57,11 @@ class ConnectionBrodcastReciver : BroadcastReceiver() {
             deleteProductDao = db?.deleteProductDao()
             with(deleteProductDao) {
                 listOfAllPendingDelets = this?.getAll()!!
-                Log.e(TAG, " size of list from db ${listOfAllPendingDelets.size.toString()}")
+                Log.e(TAG, " size of list from db ${listOfAllPendingDelets.size}")
                 for (i in listOfAllPendingDelets) {
-                    deleteProduct(context,i.id)
+                    deleteProduct(context, i.id)
+                    Log.e(TAG," id is ${i.id}  _id is${i._id} ")
+
                 }
             }
         }.subscribeOn(Schedulers.io())
@@ -68,26 +70,30 @@ class ConnectionBrodcastReciver : BroadcastReceiver() {
 
     }
 
-    private fun deleteProduct(context: Context,productId: String) {
+    private fun deleteProduct(context: Context, productId: String) {
         var mQueue = Volley.newRequestQueue(context)
         var userId = SharedPrefHelper.getString(context, SharedPrefHelper.USER_ID_KEY, "")
         var authToken = SharedPrefHelper.getString(context, SharedPrefHelper.AUTH_TOKEN_KEY, "")
         mQueue = Volley.newRequestQueue(context)
         var requestParam: JSONObject = JSONObject()
-        requestParam.put("userId",userId)
-        requestParam.put("accessToken",authToken)
-        requestParam.put("productId",productId)
+        requestParam.put("userId", userId)
+        requestParam.put("accessToken", authToken)
+        requestParam.put("productId", productId)
 
 
+        var request =
+            JsonObjectRequest(
+                Request.Method.POST,
+                ApiHelper.BASE_URL + ApiHelper.DELETE_PRODUCTS,
+                requestParam,
+                Response.Listener {
+                    Toast.makeText(context, it.getString("message"), Toast.LENGTH_SHORT).show()
+                    Log.e(TAG,"${it.getString("message")}  $requestParam ")
 
-        var request=
-            JsonObjectRequest(Request.Method.POST,ApiHelper.BASE_URL+ApiHelper.DELETE_PRODUCTS,requestParam, Response.Listener {
-                Toast.makeText(context,it.getString("message"),Toast.LENGTH_SHORT).show()
+                },
+                Response.ErrorListener {
 
-
-            }, Response.ErrorListener {
-
-            })
+                })
         mQueue.add(request)
         deleteAllDelFromDb(context)
 
@@ -131,10 +137,7 @@ class ConnectionBrodcastReciver : BroadcastReceiver() {
     }
 
 
-
-
-
-    private fun deleteAllFromDb(context: Context){
+    private fun deleteAllFromDb(context: Context) {
         Observable.fromCallable {
             db = AppDatabase.getAppDataBase(context = context)
 
@@ -146,7 +149,8 @@ class ConnectionBrodcastReciver : BroadcastReceiver() {
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe()
     }
-    private fun deleteAllDelFromDb(context: Context){
+
+    private fun deleteAllDelFromDb(context: Context) {
         Observable.fromCallable {
             db = AppDatabase.getAppDataBase(context = context)
 
@@ -158,10 +162,6 @@ class ConnectionBrodcastReciver : BroadcastReceiver() {
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe()
     }
-
-
-
-
 
 
     /*
@@ -189,8 +189,8 @@ class ConnectionBrodcastReciver : BroadcastReceiver() {
         multipart.addParam("ageGroupId", addProductModel.ageGroupId)
 
         multipart.addFile("image/jpeg", "file", imageName, addProductModel.bitmap)
-        Log.e(TAG,"bitmap is ${addProductModel.bitmap}")
-        Log.e(TAG,"bitmap is byte array is  ${addProductModel.bitmap}")
+        Log.e(TAG, "bitmap is ${addProductModel.bitmap}")
+        Log.e(TAG, "bitmap is byte array is  ${addProductModel.bitmap}")
         multipart.addParam("latitude", addProductModel.latitude)
         multipart.addParam("longitude", addProductModel.longitude)
 
@@ -203,7 +203,7 @@ class ConnectionBrodcastReciver : BroadcastReceiver() {
         multipart.launchRequest(ApiHelper.BASE_URL + ApiHelper.ADD_PRODUCT, {
             result = it.data.toString()
             Log.e(TAG, "in launch request success")
-            Toast.makeText(context,"Uploades Sucess!! ",Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Uploades Sucess!! ", Toast.LENGTH_SHORT).show()
             Log.e(TAG, it.data.toString())
 
 
@@ -228,4 +228,3 @@ class ConnectionBrodcastReciver : BroadcastReceiver() {
     }
 
 }
-

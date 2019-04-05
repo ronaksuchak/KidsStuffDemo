@@ -37,6 +37,7 @@ import android.os.AsyncTask
 import android.os.Handler
 import android.os.StrictMode
 import com.etech.kidsstuffdemo.R
+import jdroidcoder.ua.paginationrecyclerview.OnPageChangeListener
 import org.jetbrains.anko.doAsync
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -72,25 +73,30 @@ class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
         recyclerView.layoutManager = layoutManager
 
         recyclerView.adapter = adaptor
-        recyclerView.addOnScrollListener(InfiniteScroll(layoutManager) {
+//        recyclerView.addOnScrollListener(InfiniteScroll(layoutManager) {
+//
+//            //println("load page $it")
+//            Toast.makeText(this, "current page is ${it}", Toast.LENGTH_SHORT).show()
+//            loadJson(it)
+//            productList.clear()
+//            adaptor.notifyDataSetChanged()
+//
+//        })
 
-            //println("load page $it")
-            Toast.makeText(this, "current page is ${it - 1}", Toast.LENGTH_SHORT).show()
-            loadJson(it)
-            productList.clear()
-            adaptor.notifyDataSetChanged()
+        recyclerView.setOnPageChangeListener(object : OnPageChangeListener {
+            override fun onPageChange(page: Int) {
+                Toast.makeText(this@DashbordActivity,"current page $page",Toast.LENGTH_SHORT).show()
+                loadJson(page)
+                adaptor.notifyDataSetChanged()
 
+            }
         })
-
 
         swipe_n_refresh.setOnRefreshListener {
             productList.clear()
             loadJson(1)
             adaptor.notifyDataSetChanged()
-
-
-            adaptor.notifyDataSetChanged()
-
+            swipe_n_refresh.isRefreshing=false
         }
 
         fab.setOnClickListener { view ->
@@ -113,14 +119,14 @@ class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
         authToken = SharedPrefHelper.getString(this, SharedPrefHelper.AUTH_TOKEN_KEY, "")
     }
 
-    override fun onResume() {
-        super.onResume()
-        productList.clear()
-        loadJson(1)
-        adaptor.notifyDataSetChanged()
-        swipe_n_refresh.isRefreshing = false
-
-    }
+//    override fun onResume() {
+//        super.onResume()
+//       // productList.clear()
+//       // loadJson(1)
+////        adaptor.notifyDataSetChanged()
+////        swipe_n_refresh.isRefreshing = false
+//
+//    }
 
     fun addToDb(productListDb: MutableList<ProductEntity>) {
         Observable.fromCallable {
@@ -170,8 +176,8 @@ class DashbordActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
                     )
                     productListDb.add(
                         ProductEntity(
-                            id = System.currentTimeMillis().toInt(),
-                            _id = product.getString("_id"),
+//                            id = System.currentTimeMillis().toInt(),
+                            ProductId = product.getString("_id"),
                             productName = product.getString("productName"),
                             price = product.getString("price"),
                             imageUrl = product.getString("image"),
